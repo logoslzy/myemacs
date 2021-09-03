@@ -22,7 +22,6 @@
 (setq-default cursor-type 'box)
 ;; 去除默认启动界面
 (setq inhibit-startup-message t)
-
 ;; 高亮当前行
 (global-hl-line-mode 1)
 
@@ -58,10 +57,6 @@
    '(quelpa-use-package
      :fetcher git
      :url "https://github.com/quelpa/quelpa-use-package.git")))
-(require 'quelpa-use-package)
-
-(setq quelpa-upgrade-interval 7
-      quelpa-update-melpa-p nil)
 
 ;; 切换buffer焦点时高亮动画
 (use-package beacon
@@ -193,7 +188,15 @@
 (use-package restart-emacs)
 
 (use-package monokai-theme
-  :init (load-theme 'monokai t))
+  :init (load-theme 'dracula t))
+
+(use-package atom-dark-theme)
+
+(use-package sublime-themes)
+
+(use-package spacemacs-theme)
+
+(use-package dracula-theme)
 
 (use-package which-key
   :ensure t
@@ -327,7 +330,7 @@
           treemacs-silent-filewatch              nil
           treemacs-silent-refresh                nil
           treemacs-sorting                       'alphabetic-asc
-          treemacs-space-between-root-nodes      t
+          treemnnacs-space-between-root-nodes      t
           treemacs-tag-follow-cleanup            t
           treemacs-tag-follow-delay              1.5
           treemacs-user-mode-line-format         nil
@@ -431,7 +434,24 @@
         lsp-ui-sideline-enable nil
         lsp-signature-render-documentation nil
         ;; 显示文档的延迟
-        lsp-ui-doc-delay 2))
+        lsp-ui-doc-delay 2)
+  (setq lsp-ui-imenu-enable t
+		lsp-ui-peek-enable t
+		lsp-ui-peek-list-width 60
+        lsp-ui-peek-peek-height 25
+		lsp-ui-peek-enable t
+		lsp-ui-peek-list-width 60
+        lsp-ui-peek-peek-height 25)
+  :bind
+  (
+	  ("C-c C-d" . lsp-ui-peek-find-definitions)
+	  ("C-c C-i"   . lsp-ui-peek-find-implementation)
+	  ("C-c m"   . lsp-ui-imenu))
+
+  :hook
+  (lsp-mode . lsp-ui-mode)
+  )
+  
 (use-package lsp-ivy :commands lsp-ivy-workspace-symbol)
 (use-package helm-lsp :commands helm-lsp-workspace-symbol)
 (use-package lsp-treemacs :commands lsp-treemacs-errors-list)
@@ -439,18 +459,20 @@
 (use-package ccls
   :hook ((c-mode c++-mode objc-mode cuda-mode) .
          (lambda () (require 'ccls) (lsp))))
-
+(use-package lsp-java :config (add-hook 'java-mode-hook 'lsp))
 (custom-set-variables
  ;; custom-set-variables was added by Custom.
  ;; If you edit it by hand, you could mess it up, so be careful.
  ;; Your init file should contain only one such instance.
  ;; If there is more than one, they won't work right.
+ '(custom-safe-themes
+   '("72a81c54c97b9e5efcc3ea214382615649ebb539cb4f2fe3a46cd12af72c7607" "e0d42a58c84161a0744ceab595370cbe290949968ab62273aed6212df0ea94b4" "3cc2385c39257fed66238921602d8104d8fd6266ad88a006d0a4325336f5ee02" "fa2b58bb98b62c3b8cf3b6f02f058ef7827a8e497125de0254f56e373abee088" "58c6711a3b568437bab07a30385d34aacf64156cc5137ea20e799984f4227265" "c48551a5fb7b9fc019bf3f61ebf14cf7c9cdca79bcb2a4219195371c02268f11" "c1284dd4c650d6d74cfaf0106b8ae42270cab6c58f78efc5b7c825b6a4580417" "bffa9739ce0752a37d9b1eee78fc00ba159748f50dc328af4be661484848e476" "5b7c31eb904d50c470ce264318f41b3bbc85545e4359e6b7d48ee88a892b1915" default))
  '(package-selected-packages
-   '(ccls dap-mode lsp-ui flycheck crux use-package undo-tree smart-mode-line restart-emacs monokai-theme gruvbox-theme))
+   '(lsp-java sublime-themes spacemacs-theme dracula-theme atom-dark-theme ccls dap-mode lsp-ui flycheck crux use-package undo-tree smart-mode-line restart-emacs monokai-theme gruvbox-theme))
  '(show-paren-mode t))
 (custom-set-faces
  ;; custom-set-faces was added by Custom.
  ;; If you edit it by hand, you could mess it up, so be careful.
  ;; Your init file should contain only one such instance.
  ;; If there is more than one, they won't work right.
- '(default ((t (:family "Cousine Nerd Font" :foundry "MONO" :slant normal :weight normal :height 120 :width normal)))))
+ '(default ((t (:background nil :family "FiraCode Nerd Font Mono" :foundry "CTDB" :slant normal :weight normal :height 120 :width normal)))))
