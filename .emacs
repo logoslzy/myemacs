@@ -6,7 +6,7 @@
 (setq mouse-yank-at-point nil)
 (show-paren-mode 1)
 (setq package-check-signature nil)
-(global-set-key (kbd "C-h") 'shell) 
+(global-set-key (kbd "C-c s") 'shell) 
 ;; 让'_'被视为单词的一部分
 (add-hook 'after-change-major-mode-hook (lambda () 
                                           (modify-syntax-entry ?_ "w")))
@@ -24,6 +24,25 @@
 (setq inhibit-startup-message t)
 ;; 高亮当前行
 (global-hl-line-mode 1)
+(setq-default frame-title-format '("M-EMACS - " user-login-name "@" system-name " - %b"))
+(display-time-mode 1)
+(display-battery-mode 1)
+;; Vertical Scroll
+(setq scroll-step 1)
+(setq scroll-margin 1)
+(setq scroll-conservatively 101)
+(setq scroll-up-aggressively 0.01)
+(setq scroll-down-aggressively 0.01)
+(setq auto-window-vscroll nil)
+(setq fast-but-imprecise-scrolling nil)
+(setq mouse-wheel-scroll-amount '(1 ((shift) . 1)))
+(setq mouse-wheel-progressive-speed nil)
+;; Horizontal Scroll
+(setq hscroll-step 1)
+(setq hscroll-margin 1)
+(setq make-backup-files nil)
+(setq create-lockfiles nil)
+
 
 
 
@@ -61,8 +80,43 @@
 ;; 切换buffer焦点时高亮动画
 (use-package beacon
   :disabled
-  :ensure t
+n  :ensure t
   :hook (after-init . beacon-mode))
+
+(use-package dired
+  :ensure nil
+  :bind
+  (("C-x C-j" . dired-jump)
+   ("C-x j" . dired-jump-other-window))
+  :custom
+  ;; Always delete and copy recursively
+  (dired-listing-switches "-lah")
+  (dired-recursive-deletes 'always)
+  (dired-recursive-copies 'always)
+  ;; Auto refresh Dired, but be quiet about it
+  (global-auto-revert-non-file-buffers t)
+  (auto-revert-verbose nil)
+  ;; Quickly copy/move file in Dired
+  (dired-dwim-target t)
+  ;; Move files to trash when deleting
+  (delete-by-moving-to-trash t)
+  ;; Load the newest version of a file
+  (load-prefer-newer t)
+  ;; Detect external file changes and auto refresh file
+  (auto-revert-use-notify nil)
+  (auto-revert-interval 3) ; Auto revert every 3 sec
+  :config
+  ;; Enable global auto-revert
+  (global-auto-revert-mode t)
+  ;; Reuse same dired buffer, to prevent numerous buffers while navigating in dired
+  (put 'dired-find-alternate-file 'disabled nil)
+  :hook
+  (dired-mode . (lambda ()
+                  (local-set-key (kbd "<mouse-2>") #'dired-find-alternate-file)
+                  (local-set-key (kbd "RET") #'dired-find-alternate-file)
+                  (local-set-key (kbd "^")
+                                 (lambda () (interactive) (find-alternate-file ".."))))))
+
 
 (use-package dashboard
   :ensure t
@@ -89,9 +143,9 @@
         `(;; line1
           ((,(all-the-icons-octicon "mark-github" :height 1.1 :v-adjust 0.0)
           "Homepage"
-          "Browse homepage"
+n          "Browse homepage"
           (lambda (&rest _) (browse-url "homepage")))
-          ("★" "Star" "Show stars" (lambda (&rest _) (show-stars)) warning)
+n          ("★" "Star" "Show stars" (lambda (&rest _) (show-stars)) warning)
           ("?" "" "?/h" #'show-help nil "<" ">"))
           ;; line 2
           ((,(all-the-icons-faicon "linkedin" :height 1.1 :v-adjust 0.0)
@@ -102,6 +156,38 @@
 
 
 )
+
+(use-package ace-window
+  :ensure t
+  :bind ("C-x C-o" . ace-window)
+  :init
+  (progn
+	;; 设置标记
+    (custom-set-faces
+     '(aw-leading-char-face
+       ((t (:inherit ace-jump-face-foreground :height 3.0 :foreground "magenta")))))))
+
+(use-package ibuffer
+  :ensure nil
+  :bind ("C-x C-b" . ibuffer)
+  :init
+  (use-package ibuffer-vc
+    :commands (ibuffer-vc-set-filter-groups-by-vc-root)
+    :custom
+    (ibuffer-vc-skip-if-remote 'nil))
+  :custom
+  (ibuffer-formats
+   '((mark modified read-only locked " "
+           (name 35 35 :left :elide)
+           " "
+           (size 9 -1 :right)
+           " "
+           (mode 16 16 :left :elide)
+           " " filename-and-process)
+     (mark " "
+           (name 16 -1)
+           " " filename))))
+
 
 (use-package ivy
   :ensure t
@@ -139,29 +225,45 @@
 	(posframe-mouse-banish nil)))
 
 ;; 竖线
-(use-package page-break-lines
-  :ensure t
-  :hook (after-init . global-page-break-lines-mode)
-  :config
-  (set-fontset-font "fontset-default"
-                  (cons page-break-lines-char page-break-lines-char)
-                  (face-attribute 'default :family))
-  (let ((table (make-char-table nil)))                   ;; make a new empty table
-    (set-char-table-parent table char-width-table)       ;; make it inherit from the current char-width-table
-    (set-char-table-range table page-break-lines-char 1) ;; let the width of page-break-lines-char be 1
-    (setq char-width-table table)))
+(use-package highlight-indent-guides
+  :if (display-graphic-p)
+  :diminish
+  ;; Enable manually if needed, it a severe bug which potentially core-dumps Emacs
+  ;; https://github.com/DarthFennec/highlight-indent-guides/issues/76
+  :commands (highlight-indent-guides-mode)
+  :custom
+  (highlight-indent-guides-method 'character)
+  (highlight-indent-guides-responsive 'top)
+  (highlight-indent-guides-delay 0)
+  (highlight-indent-guides-auto-character-face-perc 7))
+  (setq-default indent-tabs-mode nil)
+  (setq-default indent-line-function 'insert-tab)
+  (setq-default tab-width 4)
+  (setq-default c-basic-offset 4)
+  (setq-default js-switch-indent-offset 4)
+  (c-set-offset 'comment-intro 0)
+  (c-set-offset 'innamespace 0)
+  (c-set-offset 'case-label '+)
+  (c-set-offset 'access-label 0)
+  (c-set-offset (quote cpp-macro) 0 nil)
+  (defun smart-electric-indent-mode ()
+    "Disable 'electric-indent-mode in certain buffers and enable otherwise."
+    (cond ((and (eq electric-indent-mode t)
+                (member major-mode '(erc-mode text-mode)))
+           (electric-indent-mode 0))
+          ((eq electric-indent-mode nil) (electric-indent-mode 1))))
+  (add-hook 'post-command-hook #'smart-electric-indent-mode)
 
 ;; 让info帮助信息中关键字有高亮
 (use-package info-colors 
   :ensure t 
   :hook ('Info-selection-hook . 'info-colors-fontify-node))
 
-;; 缩进线
-(use-package highlight-indent-guides
-  :ensure t
-  :hook (prog-mode . highlight-indent-guides-mode)
-  :config
-  (setq highlight-indent-guides-method 'bitmap))
+(use-package dynamic-fonts
+  :init (dynamic-fonts-setup)
+  :ensure t)
+(dynamic-fonts-setup)
+
 
 ;; 彩虹猫进度条
 (use-package nyan-mode
@@ -222,7 +324,7 @@
    ("C-r" . swiper)
    ("C-c C-r" . ivy-resume)
    ("M-x" . counsel-M-x)
-   ("C-x C-f" . counsel-find-file))
+   ("C-x C-f" . counnsel-find-file))
   :config
   (setq counsel-describe-function-function #'helpful-callable)
   (setq counsel-describe-variable-function #'helpful-variable)
@@ -263,6 +365,12 @@
 
 (global-linum-mode t)
 
+(use-package evil-nerd-commenter
+  :bind
+  (("C-c M-;" . c-toggle-comment-style)
+   ("M-;" . evilnc-comment-or-uncomment-lines)))
+
+
 (use-package company 
   :config 
   (setq company-dabbrev-code-everywhere t 
@@ -282,9 +390,62 @@
   (push '(company-semantic :with company-yasnippet) company-backends) 
   :hook ((after-init . global-company-mode)))
 
-(use-package company-box 
-  :ensure t 
-  :hook (company-mode . company-box-mode))
+(use-package company-box
+  :diminish
+  :if (display-graphic-p)
+  :defines company-box-icons-all-the-icons
+  :hook (company-mode . company-box-mode)
+  :custom
+  (company-box-backends-colors nil)
+  :config
+  (with-no-warnings
+    ;; Prettify icons
+    (defun my-company-box-icons--elisp (candidate)
+      (when (derived-mode-p 'emacs-lisp-mode)
+        (let ((sym (intern candidate)))
+          (cond ((fboundp sym) 'Function)
+                ((featurep sym) 'Module)
+                ((facep sym) 'Color)
+                ((boundp sym) 'Variable)
+                ((symbolp sym) 'Text)
+                (t . nil)))))
+    (advice-add #'company-box-icons--elisp :override #'my-company-box-icons--elisp))
+
+  (when (and (display-graphic-p)
+             (require 'all-the-icons nil t))
+    (declare-function all-the-icons-faicon 'all-the-icons)
+    (declare-function all-the-icons-material 'all-the-icons)
+    (declare-function all-the-icons-octicon 'all-the-icons)
+    (setq company-box-icons-all-the-icons
+          `((Unknown . ,(all-the-icons-material "find_in_page" :height 0.8 :v-adjust -0.15))
+            (Text . ,(all-the-icons-faicon "text-width" :height 0.8 :v-adjust -0.02))
+            (Method . ,(all-the-icons-faicon "cube" :height 0.8 :v-adjust -0.02 :face 'all-the-icons-purple))
+            (Function . ,(all-the-icons-faicon "cube" :height 0.8 :v-adjust -0.02 :face 'all-the-icons-purple))
+            (Constructor . ,(all-the-icons-faicon "cube" :height 0.8 :v-adjust -0.02 :face 'all-the-icons-purple))
+            (Field . ,(all-the-icons-octicon "tag" :height 0.85 :v-adjust 0 :face 'all-the-icons-lblue))
+            (Variable . ,(all-the-icons-octicon "tag" :height 0.85 :v-adjust 0 :face 'all-the-icons-lblue))
+            (Class . ,(all-the-icons-material "settings_input_component" :height 0.8 :v-adjust -0.15 :face 'all-the-icons-orange))
+            (Interface . ,(all-the-icons-material "share" :height 0.8 :v-adjust -0.15 :face 'all-the-icons-lblue))
+            (Module . ,(all-the-icons-material "view_module" :height 0.8 :v-adjust -0.15 :face 'all-the-icons-lblue))
+            (Property . ,(all-the-icons-faicon "wrench" :height 0.8 :v-adjust -0.02))
+            (Unit . ,(all-the-icons-material "settings_system_daydream" :height 0.8 :v-adjust -0.15))
+            (Value . ,(all-the-icons-material "format_align_right" :height 0.8 :v-adjust -0.15 :face 'all-the-icons-lblue))
+            (Enum . ,(all-the-icons-material "storage" :height 0.8 :v-adjust -0.15 :face 'all-the-icons-orange))
+            (Keyword . ,(all-the-icons-material "filter_center_focus" :height 0.8 :v-adjust -0.15))
+            (Snippet . ,(all-the-icons-material "format_align_center" :height 0.8 :v-adjust -0.15))
+            (Color . ,(all-the-icons-material "palette" :height 0.8 :v-adjust -0.15))
+            (File . ,(all-the-icons-faicon "file-o" :height 0.8 :v-adjust -0.02))
+            (Reference . ,(all-the-icons-material "collections_bookmark" :height 0.8 :v-adjust -0.15))
+            (Folder . ,(all-the-icons-faicon "folder-open" :height 0.8 :v-adjust -0.02))
+            (EnumMember . ,(all-the-icons-material "format_align_right" :height 0.8 :v-adjust -0.15))
+            (Constant . ,(all-the-icons-faicon "square-o" :height 0.8 :v-adjust -0.1))
+            (Struct . ,(all-the-icons-material "settings_input_component" :height 0.8 :v-adjust -0.15 :face 'all-the-icons-orange))
+            (Event . ,(all-the-icons-octicon "zap" :height 0.8 :v-adjust 0 :face 'all-the-icons-orange))
+            (Operator . ,(all-the-icons-material "control_point" :height 0.8 :v-adjust -0.15))
+            (TypeParameter . ,(all-the-icons-faicon "arrows" :height 0.8 :v-adjust -0.02))
+            (Template . ,(all-the-icons-material "format_align_left" :height 0.8 :v-adjust -0.15)))
+          company-box-icons-alist 'company-box-icons-all-the-icons)))
+
 
 (use-package treemacs
   :ensure t
@@ -383,6 +544,8 @@
   :ensure t
   :config (treemacs-set-scope-type 'Perspectives))
 
+
+
 (use-package youdao-dictionary
   :commands (youdao-dictionary-search-at-point-posframe)
   :ensure t 
@@ -406,11 +569,20 @@
   :hook (prog-mode  .  flycheck-mode))
 
 (use-package lsp-mode
-  :hook ((lsp-mode  .  lsp-enable-which-key-integration)
-  (c-mode    .  lsp-deferred))
-  :commands lsp-deferred)
-(use-package 
-  lsp-ui
+  
+  :commands lsp
+  :custom
+  (lsp-auto-guess-root nil)
+  (lsp-prefer-flymake nil) ; Use flycheck instead of flymake
+  (lsp-file-watch-threshold nil)
+  (read-process-output-max (* 1024 1024))
+  (lsp-eldoc-hook nil)
+  :bind (:map lsp-mode-map ("C-c C-f" . lsp-format-buffer))
+  :hook ((java-mode python-mode go-mode rust-mode
+          js-mode js2-mode typescript-mode web-mode
+          c-mode c++-mode objc-mode) . lsp-deferred))
+
+(use-package lsp-ui
   :ensure t
   :commands (lsp-ui)
   ;; :hook (lsp-mode . lsp-ui-mode)
@@ -451,7 +623,26 @@
   :hook
   (lsp-mode . lsp-ui-mode)
   )
-  
+
+(use-package dap-mode
+  :diminish
+  :bind
+  (:map dap-mode-map
+        (("<f12>" . dap-debug)
+         ("<f8>" . dap-continue)
+         ("<f9>" . dap-next)
+         ("<M-f11>" . dap-step-in)
+         ("C-M-<f11>" . dap-step-out)
+         ("<f7>" . dap-breakpoint-toggle))))
+
+(use-package quickrun
+  :bind
+  (("<f5>" . quickrun)
+   ("M-<f5>" . quickrun-shell)
+   ("C-c e" . quickrun)
+   ("C-c C-e" . quickrun-shell)))
+
+
 (use-package lsp-ivy :commands lsp-ivy-workspace-symbol)
 (use-package helm-lsp :commands helm-lsp-workspace-symbol)
 (use-package lsp-treemacs :commands lsp-treemacs-errors-list)
@@ -459,20 +650,38 @@
 (use-package ccls
   :hook ((c-mode c++-mode objc-mode cuda-mode) .
          (lambda () (require 'ccls) (lsp))))
-(use-package lsp-java :config (add-hook 'java-mode-hook 'lsp))
+(use-package lsp-java
+             :hook ((java-mode) . (lambda () (require 'lsp-java) (lsp)))
+             :after lsp-mode
+             :if (executable-find "mvn") 
+             :config (add-hook 'java-mode-hook 'lsp))
+
+(use-package vterm
+  :commands (vterm)
+  :ensure t
+  :bind ("C-c s" . 'vterm))
+
+(use-package markdown-mode
+  :ensure t
+  :mode ("README\\.md\\'" . gfm-mode)
+  :init (setq markdown-command "multimarkdown"))
+
+
 (custom-set-variables
  ;; custom-set-variables was added by Custom.
  ;; If you edit it by hand, you could mess it up, so be careful.
  ;; Your init file should contain only one such instance.
  ;; If there is more than one, they won't work right.
- '(custom-safe-themes
-   '("72a81c54c97b9e5efcc3ea214382615649ebb539cb4f2fe3a46cd12af72c7607" "e0d42a58c84161a0744ceab595370cbe290949968ab62273aed6212df0ea94b4" "3cc2385c39257fed66238921602d8104d8fd6266ad88a006d0a4325336f5ee02" "fa2b58bb98b62c3b8cf3b6f02f058ef7827a8e497125de0254f56e373abee088" "58c6711a3b568437bab07a30385d34aacf64156cc5137ea20e799984f4227265" "c48551a5fb7b9fc019bf3f61ebf14cf7c9cdca79bcb2a4219195371c02268f11" "c1284dd4c650d6d74cfaf0106b8ae42270cab6c58f78efc5b7c825b6a4580417" "bffa9739ce0752a37d9b1eee78fc00ba159748f50dc328af4be661484848e476" "5b7c31eb904d50c470ce264318f41b3bbc85545e4359e6b7d48ee88a892b1915" default))
+ '(display-battery-mode t)
+ '(display-time-mode t)
  '(package-selected-packages
-   '(lsp-java sublime-themes spacemacs-theme dracula-theme atom-dark-theme ccls dap-mode lsp-ui flycheck crux use-package undo-tree smart-mode-line restart-emacs monokai-theme gruvbox-theme))
+   '(evil-nerd-commenter vterm youdao-dictionary which-key treemacs-projectile treemacs-persp treemacs-magit treemacs-icons-dired treemacs-evil sublime-themes spacemacs-theme smart-mode-line restart-emacs rainbow-delimiters quickrun quelpa-use-package nyan-mode monokai-theme lsp-ui lsp-java lsp-ivy ivy-posframe info-colors imenu-list highlight-indent-guides helm-lsp flycheck emojify dynamic-fonts dracula-theme doom-modeline dashboard crux counsel company-box ccls atom-dark-theme all-the-icons-dired))
  '(show-paren-mode t))
 (custom-set-faces
  ;; custom-set-faces was added by Custom.
  ;; If you edit it by hand, you could mess it up, so be careful.
  ;; Your init file should contain only one such instance.
  ;; If there is more than one, they won't work right.
- '(default ((t (:background nil :family "FiraCode Nerd Font Mono" :foundry "CTDB" :slant normal :weight normal :height 120 :width normal)))))
+ '(default ((t (:background nil :family "FiraCode Nerd Font" :foundry "CTDB" :slant normal :weight normal :height 120 :width normal))))
+ '(aw-leading-char-face ((t (:inherit ace-jump-face-foreground :height 3.0 :foreground "magenta")))))
+
