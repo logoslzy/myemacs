@@ -2,7 +2,10 @@
                          ("melpa" . "http://mirrors.tuna.tsinghua.edu.cn/elpa/melpa/")
 			 ("org"   . "http://mirrors.tuna.tsinghua.edu.cn/elpa/org")))
 (electric-pair-mode 1)
+(prefer-coding-system 'utf-8) 
+(set-language-environment "UTF-8")
 (setq-default tab-width 4)
+(set-face-attribute 'default nil :height 140)
 (setq mouse-yank-at-point nil)
 (show-paren-mode 1)
 (setq package-check-signature nil)
@@ -43,9 +46,6 @@
 (setq make-backup-files nil)
 (setq create-lockfiles nil)
 
-
-
-
 (require 'package)
 
 (unless (bound-and-true-p package--initialized)
@@ -80,7 +80,7 @@
 ;; 切换buffer焦点时高亮动画
 (use-package beacon
   :disabled
-n  :ensure t
+  :ensure t
   :hook (after-init . beacon-mode))
 
 (use-package dired
@@ -143,9 +143,9 @@ n  :ensure t
         `(;; line1
           ((,(all-the-icons-octicon "mark-github" :height 1.1 :v-adjust 0.0)
           "Homepage"
-n          "Browse homepage"
+          "Browse homepage"
           (lambda (&rest _) (browse-url "homepage")))
-n          ("★" "Star" "Show stars" (lambda (&rest _) (show-stars)) warning)
+          ("★" "Star" "Show stars" (lambda (&rest _) (show-stars)) warning)
           ("?" "" "?/h" #'show-help nil "<" ">"))
           ;; line 2
           ((,(all-the-icons-faicon "linkedin" :height 1.1 :v-adjust 0.0)
@@ -199,10 +199,10 @@ n          ("★" "Star" "Show stars" (lambda (&rest _) (show-stars)) warning)
   (setq ivy-posframe-display-functions-alist
       '((swiper          . ivy-display-function-fallback)
         (complete-symbol . ivy-posframe-display-at-point)
-        (counsel-M-x     . ivy-posframe-display-at-frame-center)
-        (ivy-switch-buffer.ivy-posframe-display-at-frame-center)
-        (counsel-find-file.ivy-posframe-display-at-frame-center)
-        (t               . ivy-posframe-display-at-frame-center)))
+        (counsel-M-x     . ivy-display-function-fallback)
+        (ivy-switch-buffer.ivy-display-function-fallback)
+        (counsel-find-file.ivy-display-function-fallback)
+        (t               . ivy-display-function-fallback)))
   (ivy-posframe-mode 1)
   (setq ivy-posframe-parameters
       '((left-fringe . 8)
@@ -260,7 +260,6 @@ n          ("★" "Star" "Show stars" (lambda (&rest _) (show-stars)) warning)
   :hook ('Info-selection-hook . 'info-colors-fontify-node))
 
 (use-package dynamic-fonts
-  :init (dynamic-fonts-setup)
   :ensure t)
 (dynamic-fonts-setup)
 
@@ -279,6 +278,9 @@ n          ("★" "Star" "Show stars" (lambda (&rest _) (show-stars)) warning)
   :init (doom-modeline-mode 1)
   )
 
+(use-package doom-themes
+  :ensure t)
+
 (use-package posframe
   :ensure t)
 
@@ -290,7 +292,7 @@ n          ("★" "Star" "Show stars" (lambda (&rest _) (show-stars)) warning)
 (use-package restart-emacs)
 
 (use-package monokai-theme
-  :init (load-theme 'dracula t))
+  :init (load-theme 'doom-vibrant t))
 
 (use-package atom-dark-theme)
 
@@ -299,6 +301,10 @@ n          ("★" "Star" "Show stars" (lambda (&rest _) (show-stars)) warning)
 (use-package spacemacs-theme)
 
 (use-package dracula-theme)
+
+(use-package spaceline-all-the-icons)
+
+(use-package spaceline)
 
 (use-package which-key
   :ensure t
@@ -324,7 +330,7 @@ n          ("★" "Star" "Show stars" (lambda (&rest _) (show-stars)) warning)
    ("C-r" . swiper)
    ("C-c C-r" . ivy-resume)
    ("M-x" . counsel-M-x)
-   ("C-x C-f" . counnsel-find-file))
+   ("C-x C-f" . counsel-find-file))
   :config
   (setq counsel-describe-function-function #'helpful-callable)
   (setq counsel-describe-variable-function #'helpful-variable)
@@ -606,7 +612,8 @@ n          ("★" "Star" "Show stars" (lambda (&rest _) (show-stars)) warning)
         lsp-ui-sideline-enable nil
         lsp-signature-render-documentation nil
         ;; 显示文档的延迟
-        lsp-ui-doc-delay 2)
+        lsp-ui-doc-delay 2
+        lsp-ui-doc-max-width 55)
   (setq lsp-ui-imenu-enable t
 		lsp-ui-peek-enable t
 		lsp-ui-peek-list-width 60
@@ -614,6 +621,7 @@ n          ("★" "Star" "Show stars" (lambda (&rest _) (show-stars)) warning)
 		lsp-ui-peek-enable t
 		lsp-ui-peek-list-width 60
         lsp-ui-peek-peek-height 25)
+  (setq lsp-ui-imenu-window 25)
   :bind
   (
 	  ("C-c C-d" . lsp-ui-peek-find-definitions)
@@ -651,10 +659,16 @@ n          ("★" "Star" "Show stars" (lambda (&rest _) (show-stars)) warning)
   :hook ((c-mode c++-mode objc-mode cuda-mode) .
          (lambda () (require 'ccls) (lsp))))
 (use-package lsp-java
-             :hook ((java-mode) . (lambda () (require 'lsp-java) (lsp)))
+             :init (use-package request :defer t)
              :after lsp-mode
              :if (executable-find "mvn") 
              :config (add-hook 'java-mode-hook 'lsp))
+
+(use-package lsp-pyright
+  :ensure t
+  :hook (python-mode . (lambda ()
+                          (require 'lsp-pyright)
+                          (lsp))))  ; or lsp-deferred
 
 (use-package vterm
   :commands (vterm)
@@ -666,22 +680,42 @@ n          ("★" "Star" "Show stars" (lambda (&rest _) (show-stars)) warning)
   :mode ("README\\.md\\'" . gfm-mode)
   :init (setq markdown-command "multimarkdown"))
 
+(use-package neotree
+  :ensure t
+  :bind ([f3] . neotree-toggle)
+  :config
+  (setq neo-theme (if (display-graphic-p) 'icons 'arrow)))
+
+(use-package org-bullets
+  :ensure t
+  :after org
+  :config
+  (add-hook 'org-mode-hook 'org-superstar-mode))
+
+(use-package org-superstar
+  :ensure t
+  :after org
+  :config
+  :hook (org-mode . (lambda () (require 'org-superstar) (org-superstar-mode))))
 
 (custom-set-variables
  ;; custom-set-variables was added by Custom.
  ;; If you edit it by hand, you could mess it up, so be careful.
  ;; Your init file should contain only one such instance.
  ;; If there is more than one, they won't work right.
+ '(custom-safe-themes
+   '("333958c446e920f5c350c4b4016908c130c3b46d590af91e1e7e2a0611f1e8c5" "0d01e1e300fcafa34ba35d5cf0a21b3b23bc4053d388e352ae6a901994597ab1" "a82ab9f1308b4e10684815b08c9cac6b07d5ccb12491f44a942d845b406b0296" "da53441eb1a2a6c50217ee685a850c259e9974a8fa60e899d393040b4b8cc922" "4b6b6b0a44a40f3586f0f641c25340718c7c626cbf163a78b5a399fbe0226659" "6c531d6c3dbc344045af7829a3a20a09929e6c41d7a7278963f7d3215139f6a7" "cf922a7a5c514fad79c483048257c5d8f242b21987af0db813d3f0b138dfaf53" "d6844d1e698d76ef048a53cefe713dbbe3af43a1362de81cdd3aefa3711eae0d" "1704976a1797342a1b4ea7a75bdbb3be1569f4619134341bd5a4c1cfb16abad4" "850bb46cc41d8a28669f78b98db04a46053eca663db71a001b40288a9b36796c" "266ecb1511fa3513ed7992e6cd461756a895dcc5fef2d378f165fed1c894a78c" "b5803dfb0e4b6b71f309606587dd88651efe0972a5be16ece6a958b197caeed8" "4b0e826f58b39e2ce2829fab8ca999bcdc076dec35187bf4e9a4b938cb5771dc" "8146edab0de2007a99a2361041015331af706e7907de9d6a330a3493a541e5a6" "f7fed1aadf1967523c120c4c82ea48442a51ac65074ba544a5aefc5af490893b" "4133d2d6553fe5af2ce3f24b7267af475b5e839069ba0e5c80416aa28913e89a" "e8df30cd7fb42e56a4efc585540a2e63b0c6eeb9f4dc053373e05d774332fc13" "6f4421bf31387397f6710b6f6381c448d1a71944d9e9da4e0057b3fe5d6f2fad" "4a5aa2ccb3fa837f322276c060ea8a3d10181fecbd1b74cb97df8e191b214313" "b0e446b48d03c5053af28908168262c3e5335dcad3317215d9fdeb8bac5bacf9" "745d03d647c4b118f671c49214420639cb3af7152e81f132478ed1c649d4597d" "e19ac4ef0f028f503b1ccafa7c337021834ce0d1a2bca03fcebc1ef635776bea" "8621edcbfcf57e760b44950bb1787a444e03992cb5a32d0d9aec212ea1cd5234" "8d7b028e7b7843ae00498f68fad28f3c6258eda0650fe7e17bfb017d51d0e2a2" "1d5e33500bc9548f800f9e248b57d1b2a9ecde79cb40c0b1398dec51ee820daf" "6c98bc9f39e8f8fd6da5b9c74a624cbb3782b4be8abae8fd84cbc43053d7c175" "22a514f7051c7eac7f07112a217772f704531b136f00e2ccfaa2e2a456558d39" "da186cce19b5aed3f6a2316845583dbee76aea9255ea0da857d1c058ff003546" "a9a67b318b7417adbedaab02f05fa679973e9718d9d26075c6235b1f0db703c8" "7a7b1d475b42c1a0b61f3b1d1225dd249ffa1abb1b7f726aec59ac7ca3bf4dae" "1f1b545575c81b967879a5dddc878783e6ebcca764e4916a270f9474215289e5" "7eea50883f10e5c6ad6f81e153c640b3a288cd8dc1d26e4696f7d40f754cc703" "234dbb732ef054b109a9e5ee5b499632c63cc24f7c2383a849815dacc1727cb6" "c48551a5fb7b9fc019bf3f61ebf14cf7c9cdca79bcb2a4219195371c02268f11" "3cd28471e80be3bd2657ca3f03fbb2884ab669662271794360866ab60b6cb6e6" "72a81c54c97b9e5efcc3ea214382615649ebb539cb4f2fe3a46cd12af72c7607" "3d5ef3d7ed58c9ad321f05360ad8a6b24585b9c49abcee67bdcbb0fe583a6950" "b3775ba758e7d31f3bb849e7c9e48ff60929a792961a2d536edec8f68c671ca5" "9b59e147dbbde5e638ea1cde5ec0a358d5f269d27bd2b893a0947c4a867e14c1" "fa2b58bb98b62c3b8cf3b6f02f058ef7827a8e497125de0254f56e373abee088" "5b7c31eb904d50c470ce264318f41b3bbc85545e4359e6b7d48ee88a892b1915" "bffa9739ce0752a37d9b1eee78fc00ba159748f50dc328af4be661484848e476" default))
  '(display-battery-mode t)
  '(display-time-mode t)
+ '(font-use-system-font t)
  '(package-selected-packages
-   '(evil-nerd-commenter vterm youdao-dictionary which-key treemacs-projectile treemacs-persp treemacs-magit treemacs-icons-dired treemacs-evil sublime-themes spacemacs-theme smart-mode-line restart-emacs rainbow-delimiters quickrun quelpa-use-package nyan-mode monokai-theme lsp-ui lsp-java lsp-ivy ivy-posframe info-colors imenu-list highlight-indent-guides helm-lsp flycheck emojify dynamic-fonts dracula-theme doom-modeline dashboard crux counsel company-box ccls atom-dark-theme all-the-icons-dired))
+   '(doom-themes org-bullets spaceline-all-the-icons evil-nerd-commenter vterm youdao-dictionary which-key treemacs-projectile treemacs-persp treemacs-magit treemacs-icons-dired treemacs-evil sublime-themes spacemacs-theme smart-mode-line restart-emacs rainbow-delimiters quickrun quelpa-use-package nyan-mode monokai-theme lsp-ui lsp-java lsp-ivy ivy-posframe info-colors imenu-list highlight-indent-guides helm-lsp flycheck emojify dynamic-fonts dracula-theme doom-modeline dashboard crux counsel company-box ccls atom-dark-theme all-the-icons-dired))
  '(show-paren-mode t))
 (custom-set-faces
  ;; custom-set-faces was added by Custom.
  ;; If you edit it by hand, you could mess it up, so be careful.
  ;; Your init file should contain only one such instance.
  ;; If there is more than one, they won't work right.
- '(default ((t (:background nil :family "FiraCode Nerd Font" :foundry "CTDB" :slant normal :weight normal :height 120 :width normal))))
+ '(default ((t (:background nil :family "FiraCode Nerd Font" :foundry "CTDB" :slant normal :weight normal :height 143 :width normal))))
  '(aw-leading-char-face ((t (:inherit ace-jump-face-foreground :height 3.0 :foreground "magenta")))))
 
