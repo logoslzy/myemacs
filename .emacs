@@ -6,6 +6,10 @@
 (set-language-environment "UTF-8")
 (setq-default tab-width 4)
 (set-face-attribute 'default nil :height 140)
+(dolist (charset '(kana han symbol cjk-misc bopomofo))
+(set-fontset-font (frame-parameter nil 'font)
+charset
+(font-spec :family "WenQuanYi Zen Hei Mono" :size 14)))
 (setq mouse-yank-at-point nil)
 (show-paren-mode 1)
 (setq package-check-signature nil)
@@ -45,6 +49,14 @@
 (setq hscroll-margin 1)
 (setq make-backup-files nil)
 (setq create-lockfiles nil)
+
+;; 工具栏菜单栏滚动条消失
+(menu-bar-mode -1)
+(tool-bar-mode -1)
+(scroll-bar-mode -1)
+
+(setq c-default-style "linux"
+      c-basic-offset 4)
 
 (require 'package)
 
@@ -718,4 +730,3 @@
  ;; If there is more than one, they won't work right.
  '(default ((t (:background nil :family "FiraCode Nerd Font" :foundry "CTDB" :slant normal :weight normal :height 143 :width normal))))
  '(aw-leading-char-face ((t (:inherit ace-jump-face-foreground :height 3.0 :foreground "magenta")))))
-
